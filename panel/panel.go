@@ -243,6 +243,7 @@ func parseConnectionConfig(c *ConnectionConfig) (policy *conf.Policy) {
 	policy = &conf.Policy{
 		StatsUserUplink:   true,
 		StatsUserDownlink: true,
+		StatsUserOnline:   true,
 		Handshake:         &connectionConfig.Handshake,
 		ConnectionIdle:    &connectionConfig.ConnIdle,
 		UplinkOnly:        &connectionConfig.UplinkOnly,
