@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	version  = "0.9.6-VN"
+	version  = "0.9.6-VN (Xray-core v26)"
 	codename = "XrayR"
-	intro    = "Backend Xray hiệu năng cao, tối ưu RAM - Bản Việt Hóa bởi Phương Liên 4G"
+	intro    = "Backend Xray hiệu năng cao, tối ưu RAM, Xray-core v26 - Bản Việt Hóa bởi Phương Liên 4G"
 )
 
 func init() {

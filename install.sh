@@ -170,8 +170,8 @@ download_package() {
 
     DOWNLOAD_OK=false
     URLS=(
-        "https://raw.githubusercontent.com/hqp1310/XrayR/main/XrayR-linux.zip"
-        "https://github.com/hqp1310/XrayR/raw/main/XrayR-linux.zip"
+        "https://raw.githubusercontent.com/hqp1310/XrayR/core-v26/XrayR-linux.zip"
+        "https://github.com/hqp1310/XrayR/raw/core-v26/XrayR-linux.zip"
         "${API_HOST}/xraywarp/XrayR-linux.zip"
         "https://phuonglien4g.com/xraywarp/XrayR-linux.zip"
     )
@@ -302,7 +302,7 @@ EOF
 
     # 2. Cài đặt Script Menu Quản Lý Toàn Diện /usr/bin/XrayR và /usr/bin/xrayr
     echo -e "  Đang cài đặt script menu quản lý (21 tính năng)..."
-    local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/main/xrayr.sh"
+    local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/core-v26/xrayr.sh"
     if ! curl -sfI "$menu_url" >/dev/null 2>&1; then
         if [ -n "$API_HOST" ]; then
             menu_url="${API_HOST}/xraywarp/XrayR"
