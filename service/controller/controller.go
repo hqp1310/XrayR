@@ -592,11 +592,11 @@ func (c *Controller) userInfoMonitor() (err error) {
 	// Report Online info
 	if onlineDevice, err := c.GetOnlineDevice(c.Tag); err != nil {
 		c.logger.Print(err)
-	} else if len(*onlineDevice) > 0 {
+	} else {
 		if err = c.apiClient.ReportNodeOnlineUsers(onlineDevice); err != nil {
 			c.logger.Print(err)
-		} else {
-			c.logger.Printf("Báo cáo %d người dùng đang online", len(*onlineDevice))
+		} else if len(*onlineDevice) > 0 {
+			c.logger.Printf("Báo cáo %d thiết bị online", len(*onlineDevice))
 		}
 	}
 

@@ -317,15 +317,13 @@ EOF
 
     systemctl daemon-reload
     systemctl enable XrayR >/dev/null 2>&1
-    if [[ "$ONLY_BINARY" != true ]]; then
-        systemctl restart XrayR
-    fi
+    systemctl restart XrayR 2>/dev/null || true
 }
 
 setup_service_and_cli
 
 if [[ "$ONLY_BINARY" == true ]]; then
-    echo -e "${GREEN}✓ Cài đặt nhị phân XrayR v0.9.6-VN Core và dịch vụ Systemd thành công!${PLAIN}"
+    echo -e "${GREEN}✓ Cập nhật nhị phân XrayR v0.9.6-VN Core và khởi động lại dịch vụ thành công!${PLAIN}"
     exit 0
 fi
 
