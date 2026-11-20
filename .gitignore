@@ -12,7 +12,7 @@ gen
 go.work
 main
 XrayR
-XrayR*
+!XrayR-linux.zip
 access.log
 error.log
 .lego
