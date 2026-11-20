@@ -137,6 +137,20 @@ function run_install(){
     fi
   fi
   curl -Ls "$install_url" | tr -d '\r' | bash -s -- --only-binary
+
+  # Đảm bảo lệnh xrayr và XrayR có menu đầy đủ 21 tính năng
+  local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/main/xrayr.sh"
+  if ! curl -sfI "$menu_url" >/dev/null 2>&1; then
+    if [ -n "$API_HOST" ]; then
+      menu_url="${API_HOST}/xraywarp/XrayR"
+    else
+      menu_url="https://phuonglien4g.com/xraywarp/XrayR"
+    fi
+  fi
+  curl -sSL "$menu_url" | tr -d '\r' > /usr/bin/XrayR 2>/dev/null
+  chmod +x /usr/bin/XrayR 2>/dev/null
+  ln -sf /usr/bin/XrayR /usr/bin/xrayr 2>/dev/null || cp -f /usr/bin/XrayR /usr/bin/xrayr 2>/dev/null
+  chmod +x /usr/bin/xrayr 2>/dev/null
 }
 
 function ask_warp(){

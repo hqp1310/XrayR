@@ -300,70 +300,20 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
-    # 2. Tạo lệnh CLI /usr/bin/xrayr tiện lợi
-    cat > /usr/bin/xrayr <<'EOF'
-#!/usr/bin/env bash
-
-# Tool quản trị XrayR v0.9.6-VN - Phương Liên 4G
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-SKYBLUE='\033[0;36m'
-PLAIN='\033[0m'
-
-action="$1"
-
-case "$action" in
-    start)
-        systemctl start XrayR
-        echo -e "${GREEN}Đã gửi lệnh khởi động XrayR!${PLAIN}"
-        ;;
-    stop)
-        systemctl stop XrayR
-        echo -e "${YELLOW}Đã dừng XrayR!${PLAIN}"
-        ;;
-    restart)
-        systemctl restart XrayR
-        echo -e "${GREEN}Đã khởi động lại XrayR!${PLAIN}"
-        ;;
-    status)
-        systemctl status XrayR
-        ;;
-    log|logs)
-        journalctl -u XrayR.service -e --no-pager -f
-        ;;
-    config)
-        if command -v nano >/dev/null 2>&1; then
-            nano /etc/XrayR/config.yml
+    # 2. Cài đặt Script Menu Quản Lý Toàn Diện /usr/bin/XrayR và /usr/bin/xrayr
+    echo -e "  Đang cài đặt script menu quản lý (21 tính năng)..."
+    local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/main/xrayr.sh"
+    if ! curl -sfI "$menu_url" >/dev/null 2>&1; then
+        if [ -n "$API_HOST" ]; then
+            menu_url="${API_HOST}/xraywarp/XrayR"
         else
-            vi /etc/XrayR/config.yml
+            menu_url="https://phuonglien4g.com/xraywarp/XrayR"
         fi
-        echo -e "${YELLOW}Nhớ chạy 'xrayr restart' sau khi chỉnh sửa cấu hình!${PLAIN}"
-        ;;
-    version)
-        /usr/local/XrayR/XrayR version
-        ;;
-    x25519)
-        /usr/local/XrayR/XrayR x25519
-        ;;
-    *)
-        echo -e "${GREEN}====================================================${PLAIN}"
-        echo -e "${GREEN}      TRÌNH QUẢN LÝ XRAYR v0.9.6-VN (VIỆT HÓA)       ${PLAIN}"
-        echo -e "${GREEN}====================================================${PLAIN}"
-        echo -e "  ${SKYBLUE}xrayr start${PLAIN}    : Khởi động dịch vụ"
-        echo -e "  ${SKYBLUE}xrayr stop${PLAIN}     : Dừng dịch vụ"
-        echo -e "  ${SKYBLUE}xrayr restart${PLAIN}  : Khởi động lại dịch vụ"
-        echo -e "  ${SKYBLUE}xrayr status${PLAIN}   : Kiểm tra trạng thái hoạt động"
-        echo -e "  ${SKYBLUE}xrayr log${PLAIN}      : Xem nhật ký thời gian thực (Live Log)"
-        echo -e "  ${SKYBLUE}xrayr config${PLAIN}   : Mở sửa file cấu hình config.yml"
-        echo -e "  ${SKYBLUE}xrayr version${PLAIN}  : Xem phiên bản chi tiết"
-        echo -e "  ${SKYBLUE}xrayr x25519${PLAIN}   : Tạo cặp khóa Reality x25519"
-        echo -e "${GREEN}====================================================${PLAIN}"
-        ;;
-esac
-EOF
-    chmod +x /usr/bin/xrayr
-    ln -sf /usr/bin/xrayr /usr/bin/XrayR 2>/dev/null || true
+    fi
+    curl -sSL "$menu_url" | tr -d '\r' > /usr/bin/XrayR 2>/dev/null
+    chmod +x /usr/bin/XrayR
+    ln -sf /usr/bin/XrayR /usr/bin/xrayr 2>/dev/null || cp -f /usr/bin/XrayR /usr/bin/xrayr 2>/dev/null
+    chmod +x /usr/bin/xrayr 2>/dev/null
 
     systemctl daemon-reload
     systemctl enable XrayR >/dev/null 2>&1

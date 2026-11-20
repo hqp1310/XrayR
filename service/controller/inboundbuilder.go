@@ -19,6 +19,78 @@ import (
 	"github.com/XrayR-project/XrayR/common/mylego"
 )
 
+// parseVlessDecryption safely determines the decryption setting for VLESS.
+// It handles quantum-safe MLKEM768X25519PLUS decryption when properly configured,
+// and safely falls back to "none" to prevent Xray-core panics when settings are missing or incomplete.
+func parseVlessDecryption(encryption string, settings any) string {
+	enc := strings.TrimSpace(encryption)
+	if enc == "" || strings.EqualFold(enc, "none") {
+		return "none"
+	}
+
+	// 1. If already provided as a full valid mlkem string
+	if strings.HasPrefix(enc, "mlkem768x25519plus.") {
+		parts := strings.Split(enc, ".")
+		if len(parts) >= 4 {
+			return enc
+		}
+	}
+
+	// 2. If node specifies mlkem768x25519plus, attempt to assemble from settings
+	if strings.EqualFold(enc, "mlkem768x25519plus") && settings != nil {
+		var mode, ticket, privateKey string
+		switch m := settings.(type) {
+		case map[string]any:
+			if v, ok := m["mode"].(string); ok && v != "" {
+				mode = v
+			}
+			if v, ok := m["ticket"].(string); ok && v != "" {
+				ticket = v
+			}
+			if v, ok := m["private_key"].(string); ok && v != "" {
+				privateKey = v
+			} else if v, ok := m["privateKey"].(string); ok && v != "" {
+				privateKey = v
+			}
+		case map[string]string:
+			mode = m["mode"]
+			ticket = m["ticket"]
+			if pk, ok := m["private_key"]; ok && pk != "" {
+				privateKey = pk
+			} else {
+				privateKey = m["privateKey"]
+			}
+		}
+
+		if mode == "" {
+			mode = "native"
+		}
+		if ticket == "" {
+			ticket = "600s"
+		} else if !strings.HasSuffix(ticket, "s") {
+			ticket = ticket + "s"
+		}
+
+		if privateKey != "" {
+			// Convert to RawURLEncoding (no '=' padding, '-' and '_' characters)
+			privateKey = strings.ReplaceAll(privateKey, "+", "-")
+			privateKey = strings.ReplaceAll(privateKey, "/", "_")
+			privateKey = strings.TrimRight(privateKey, "=")
+
+			candidate := fmt.Sprintf("mlkem768x25519plus.%s.%s.%s", mode, ticket, privateKey)
+			s := strings.Split(candidate, ".")
+			if len(s) >= 4 {
+				if b, err := base64.RawURLEncoding.DecodeString(s[3]); err == nil && (len(b) == 32 || len(b) == 64) {
+					return candidate
+				}
+			}
+		}
+	}
+
+	// Default fallback to "none" for standard VLESS or incomplete settings to guarantee no crash
+	return "none"
+}
+
 // InboundBuilder build Inbound config for different protocol
 func InboundBuilder(config *Config, nodeInfo *api.NodeInfo, tag string) (*core.InboundHandlerConfig, error) {
 	inboundDetourConfig := &conf.InboundDetourConfig{}
@@ -60,12 +132,9 @@ func InboundBuilder(config *Config, nodeInfo *api.NodeInfo, tag string) (*core.I
 	case "V2ray", "Vmess", "Vless":
 		if nodeInfo.EnableVless || (nodeInfo.NodeType == "Vless" && nodeInfo.NodeType != "Vmess") {
 			protocol = "vless"
-			decryption := "none"
-			if nodeInfo.Encryption != "" && nodeInfo.Encryption != "none" {
-				decryption = nodeInfo.Encryption
-			}
-			// Enable fallback
-			if config.EnableFallback {
+			decryption := parseVlessDecryption(nodeInfo.Encryption, nodeInfo.EncryptionSettings)
+			// Enable fallback (only when decryption == "none")
+			if config.EnableFallback && decryption == "none" {
 				fallbackConfigs, err := buildVlessFallbacks(config.FallBackConfigs)
 				if err == nil {
 					proxySetting = &conf.VLessInboundConfig{
