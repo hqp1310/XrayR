@@ -35,8 +35,15 @@ var errSniffingTimeout = newError("timeout on sniffing")
 
 type cachedReader struct {
 	sync.Mutex
-	reader *pipe.Reader
+	reader buf.TimeoutReader
 	cache  buf.MultiBuffer
+}
+
+func toTimeoutReader(r buf.Reader) buf.TimeoutReader {
+	if tr, ok := r.(buf.TimeoutReader); ok {
+		return tr
+	}
+	return &buf.TimeoutWrapperReader{Reader: r}
 }
 
 func (r *cachedReader) Cache(b *buf.Buffer) {
@@ -89,7 +96,11 @@ func (r *cachedReader) Interrupt() {
 		r.cache = buf.ReleaseMulti(r.cache)
 	}
 	r.Unlock()
-	r.reader.Interrupt()
+	if p, ok := r.reader.(*pipe.Reader); ok {
+		p.Interrupt()
+	} else if p, ok := r.reader.(common.Interruptible); ok {
+		p.Interrupt()
+	}
 }
 
 // DefaultDispatcher is a custom implementation that embeds the official dispatcher
@@ -187,7 +198,15 @@ func (d *DefaultDispatcher) getLink(ctx context.Context) (*transport.Link, *tran
 
 	if user != nil && len(user.Email) > 0 {
 		// Speed Limit and Device Limit
-		bucket, ok, reject := d.Limiter.GetUserBucket(sessionInbound.Tag, user.Email, sessionInbound.Source.Address.IP().String())
+		var clientIP string
+		if sessionInbound.Source.Address != nil {
+			if ip := sessionInbound.Source.Address.IP(); ip != nil {
+				clientIP = ip.String()
+			} else {
+				clientIP = sessionInbound.Source.Address.String()
+			}
+		}
+		bucket, ok, reject := d.Limiter.GetUserBucket(sessionInbound.Tag, user.Email, clientIP)
 		if reject {
 			errors.LogWarning(ctx, "Devices reach the limit: ", user.Email)
 			common.Close(outboundLink.Writer)
@@ -284,7 +303,7 @@ func (d *DefaultDispatcher) Dispatch(ctx context.Context, destination net.Destin
 	} else {
 		go func() {
 			cReader := &cachedReader{
-				reader: outbound.Reader.(*pipe.Reader),
+				reader: toTimeoutReader(outbound.Reader),
 			}
 			outbound.Reader = cReader
 			result, err := sniffer(ctx, cReader, sniffingRequest.MetadataOnly, destination.Network)
@@ -325,31 +344,89 @@ func (d *DefaultDispatcher) DispatchLink(ctx context.Context, destination net.De
 		content = new(session.Content)
 		ctx = session.ContextWithContent(ctx, content)
 	}
-	sniffingRequest := content.SniffingRequest
-	if !sniffingRequest.Enabled {
-		go d.routedDispatch(ctx, outbound, destination)
-	} else {
-		go func() {
-			cReader := &cachedReader{
-				reader: outbound.Reader.(*pipe.Reader),
-			}
-			outbound.Reader = cReader
-			result, err := sniffer(ctx, cReader, sniffingRequest.MetadataOnly, destination.Network)
-			if err == nil {
-				content.Protocol = result.Protocol()
-			}
-			if err == nil && d.shouldOverride(ctx, result, sniffingRequest, destination) {
-				domain := result.Domain()
-				errors.LogInfo(ctx, "sniffed domain: ", domain)
-				destination.Address = net.ParseAddress(domain)
-				if sniffingRequest.RouteOnly && result.Protocol() != "fakedns" {
-					ob.RouteTarget = destination
+
+	sessionInbound := session.InboundFromContext(ctx)
+	var user *protocol.MemoryUser
+	if sessionInbound != nil {
+		sessionInbound.CanSpliceCopy = 3
+		user = sessionInbound.User
+	}
+
+	if user != nil && len(user.Email) > 0 {
+		if d.Limiter != nil {
+			var clientIP string
+			if sessionInbound.Source.Address != nil {
+				if ip := sessionInbound.Source.Address.IP(); ip != nil {
+					clientIP = ip.String()
 				} else {
-					ob.Target = destination
+					clientIP = sessionInbound.Source.Address.String()
 				}
 			}
-			d.routedDispatch(ctx, outbound, destination)
-		}()
+			bucket, ok, reject := d.Limiter.GetUserBucket(sessionInbound.Tag, user.Email, clientIP)
+			if reject {
+				common.Close(outbound.Writer)
+				common.Interrupt(outbound.Reader)
+				return newError("Devices reach the limit: ", user.Email)
+			}
+			if ok {
+				outbound.Writer = d.Limiter.RateWriter(outbound.Writer, bucket)
+			}
+		}
+
+		if d.policy != nil {
+			p := d.policy.ForLevel(user.Level)
+			if p.Stats.UserUplink {
+				name := "user>>>" + user.Email + ">>>traffic>>>uplink"
+				if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
+					outbound.Reader = &buf.TimeoutWrapperReader{
+						Reader:  outbound.Reader,
+						Counter: c,
+					}
+				}
+			}
+			if p.Stats.UserDownlink {
+				name := "user>>>" + user.Email + ">>>traffic>>>downlink"
+				if c, _ := stats.GetOrRegisterCounter(d.stats, name); c != nil {
+					outbound.Writer = &SizeStatWriter{
+						Counter: c,
+						Writer:  outbound.Writer,
+					}
+				}
+			}
+			if p.Stats.UserOnline {
+				name := "user>>>" + user.Email + ">>>online"
+				if om, _ := stats.GetOrRegisterOnlineMap(d.stats, name); om != nil {
+					userIP := sessionInbound.Source.Address.String()
+					om.AddIP(userIP)
+					context.AfterFunc(ctx, func() { om.RemoveIP(userIP) })
+				}
+			}
+		}
+	}
+
+	sniffingRequest := content.SniffingRequest
+	if !sniffingRequest.Enabled {
+		d.routedDispatch(ctx, outbound, destination)
+	} else {
+		cReader := &cachedReader{
+			reader: toTimeoutReader(outbound.Reader),
+		}
+		outbound.Reader = cReader
+		result, err := sniffer(ctx, cReader, sniffingRequest.MetadataOnly, destination.Network)
+		if err == nil {
+			content.Protocol = result.Protocol()
+		}
+		if err == nil && d.shouldOverride(ctx, result, sniffingRequest, destination) {
+			domain := result.Domain()
+			errors.LogInfo(ctx, "sniffed domain: ", domain)
+			destination.Address = net.ParseAddress(domain)
+			if sniffingRequest.RouteOnly && result.Protocol() != "fakedns" {
+				ob.RouteTarget = destination
+			} else {
+				ob.Target = destination
+			}
+		}
+		d.routedDispatch(ctx, outbound, destination)
 	}
 
 	return nil
@@ -412,7 +489,7 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 	// Check if domain and protocol hit the rule
 	sessionInbound := session.InboundFromContext(ctx)
 	// Whether the inbound connection contains a user
-	if sessionInbound.User != nil {
+	if sessionInbound != nil && sessionInbound.User != nil && d.RuleManager != nil {
 		if d.RuleManager.Detect(sessionInbound.Tag, destination.String(), sessionInbound.User.Email) {
 			errors.LogError(ctx, fmt.Sprintf("User %s access %s reject by rule", sessionInbound.User.Email, destination.String()))
 			newError("destination is reject by rule")
@@ -452,12 +529,12 @@ func (d *DefaultDispatcher) routedDispatch(ctx context.Context, link *transport.
 		}
 	}
 
-	if handler == nil {
+	if handler == nil && d.ohm != nil {
 		handler = d.ohm.GetHandler(inTag) // Default outbound handler tag should be as same as the inbound tag
 	}
 
 	// If there is no outbound with tag as same as the inbound tag
-	if handler == nil {
+	if handler == nil && d.ohm != nil {
 		handler = d.ohm.GetDefaultHandler()
 	}
 
