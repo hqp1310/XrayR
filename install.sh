@@ -34,6 +34,7 @@ API_KEY=""
 NODE_ID=""
 NODE_TYPE="vless"
 FORCE_OVERWRITE=false
+ONLY_BINARY=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -52,6 +53,10 @@ while [[ $# -gt 0 ]]; do
         --node-type|-t)
             NODE_TYPE="$2"
             shift 2
+            ;;
+        --only-binary|-b)
+            ONLY_BINARY=true
+            shift
             ;;
         --force|-f)
             FORCE_OVERWRITE=true
@@ -105,54 +110,56 @@ install_dependencies() {
 
 install_dependencies
 
-# Nhập thông tin tương tác nếu không truyền qua tham số dòng lệnh
-if [[ -z "$API_HOST" ]]; then
+if [[ "$ONLY_BINARY" != true ]]; then
+    # Nhập thông tin tương tác nếu không truyền qua tham số dòng lệnh
+    if [[ -z "$API_HOST" ]]; then
+        echo -e ""
+        echo -e "${YELLOW}Vui lòng nhập thông tin kết nối V2Board Panel:${PLAIN}"
+        read -rp "1. Domain Web Panel (Ví dụ: https://global.phuonglien4g.com): " API_HOST
+    fi
+
+    # Chuẩn hóa URL: Xóa dấu / ở cuối nếu có
+    API_HOST=$(echo "$API_HOST" | sed 's:/*$::')
+
+    if [[ -z "$API_KEY" ]]; then
+        read -rp "2. Server Token (ApiKey): " API_KEY
+    fi
+
+    if [[ -z "$NODE_ID" ]]; then
+        read -rp "3. Node ID máy chủ (Ví dụ: 1): " NODE_ID
+    fi
+
+    # Chuẩn hóa NodeType
+    LOWER_TYPE=$(echo "$NODE_TYPE" | tr '[:upper:]' '[:lower:]')
+    case "$LOWER_TYPE" in
+        vless)
+            XRAYR_NODE_TYPE="Vless"
+            ENABLE_VLESS=true
+            ;;
+        vmess|v2ray)
+            XRAYR_NODE_TYPE="Vmess"
+            ENABLE_VLESS=false
+            ;;
+        trojan)
+            XRAYR_NODE_TYPE="Trojan"
+            ENABLE_VLESS=false
+            ;;
+        shadowsocks|ss)
+            XRAYR_NODE_TYPE="Shadowsocks"
+            ENABLE_VLESS=false
+            ;;
+        *)
+            XRAYR_NODE_TYPE="Vless"
+            ENABLE_VLESS=true
+            ;;
+    esac
+
     echo -e ""
-    echo -e "${YELLOW}Vui lòng nhập thông tin kết nối V2Board Panel:${PLAIN}"
-    read -rp "1. Domain Web Panel (Ví dụ: https://global.phuonglien4g.com): " API_HOST
+    echo -e "${SKYBLUE}[2/5] Thông số triển khai Node:${PLAIN}"
+    echo -e "  • Web Panel : ${GREEN}${API_HOST}${PLAIN}"
+    echo -e "  • Node ID   : ${GREEN}${NODE_ID}${PLAIN}"
+    echo -e "  • Giao thức : ${GREEN}${XRAYR_NODE_TYPE}${PLAIN}"
 fi
-
-# Chuẩn hóa URL: Xóa dấu / ở cuối nếu có
-API_HOST=$(echo "$API_HOST" | sed 's:/*$::')
-
-if [[ -z "$API_KEY" ]]; then
-    read -rp "2. Server Token (ApiKey): " API_KEY
-fi
-
-if [[ -z "$NODE_ID" ]]; then
-    read -rp "3. Node ID máy chủ (Ví dụ: 1): " NODE_ID
-fi
-
-# Chuẩn hóa NodeType
-LOWER_TYPE=$(echo "$NODE_TYPE" | tr '[:upper:]' '[:lower:]')
-case "$LOWER_TYPE" in
-    vless)
-        XRAYR_NODE_TYPE="Vless"
-        ENABLE_VLESS=true
-        ;;
-    vmess|v2ray)
-        XRAYR_NODE_TYPE="Vmess"
-        ENABLE_VLESS=false
-        ;;
-    trojan)
-        XRAYR_NODE_TYPE="Trojan"
-        ENABLE_VLESS=false
-        ;;
-    shadowsocks|ss)
-        XRAYR_NODE_TYPE="Shadowsocks"
-        ENABLE_VLESS=false
-        ;;
-    *)
-        XRAYR_NODE_TYPE="Vless"
-        ENABLE_VLESS=true
-        ;;
-esac
-
-echo -e ""
-echo -e "${SKYBLUE}[2/5] Thông số triển khai Node:${PLAIN}"
-echo -e "  • Web Panel : ${GREEN}${API_HOST}${PLAIN}"
-echo -e "  • Node ID   : ${GREEN}${NODE_ID}${PLAIN}"
-echo -e "  • Giao thức : ${GREEN}${XRAYR_NODE_TYPE}${PLAIN}"
 
 # Tải bộ cài XrayR-linux.zip (Đa nguồn: GitHub Raw -> Web Panel Mirror -> Server Mirror)
 download_package() {
@@ -261,7 +268,9 @@ Nodes:
 EOF
 }
 
-generate_config
+if [[ "$ONLY_BINARY" != true ]]; then
+    generate_config
+fi
 
 # Thiết lập Systemd Service & CLI Wrapper
 setup_service_and_cli() {
@@ -358,10 +367,17 @@ EOF
 
     systemctl daemon-reload
     systemctl enable XrayR >/dev/null 2>&1
-    systemctl restart XrayR
+    if [[ "$ONLY_BINARY" != true ]]; then
+        systemctl restart XrayR
+    fi
 }
 
 setup_service_and_cli
+
+if [[ "$ONLY_BINARY" == true ]]; then
+    echo -e "${GREEN}✓ Cài đặt nhị phân XrayR v0.9.6-VN Core và dịch vụ Systemd thành công!${PLAIN}"
+    exit 0
+fi
 
 # Kiểm tra trạng thái hoạt động cuối cùng
 sleep 2
