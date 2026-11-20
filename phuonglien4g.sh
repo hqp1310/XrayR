@@ -127,8 +127,8 @@ function obtain_cert(){
 }
 
 function run_install(){
-  echo "   [XrayR Core] Đang cài đặt XrayR v0.9.6-VN (Việt Hóa, ML-KEM, Tối ưu RAM)..."
-  local install_url="https://raw.githubusercontent.com/hqp1310/XrayR/main/install.sh"
+  echo "   [XrayR Core] Đang cài đặt XrayR v0.9.7-VN (Việt Hóa, ML-KEM, Tối ưu RAM, Xray-core v26)..."
+  local install_url="https://raw.githubusercontent.com/hqp1310/XrayR/core-v26/install.sh"
   if ! curl -sfI "$install_url" >/dev/null 2>&1; then
     if [ -n "$API_HOST" ]; then
       install_url="${API_HOST}/xraywarp/install.sh"
@@ -139,7 +139,7 @@ function run_install(){
   curl -Ls "$install_url" | tr -d '\r' | bash -s -- --only-binary
 
   # Đảm bảo lệnh xrayr và XrayR có menu đầy đủ 21 tính năng
-  local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/main/xrayr.sh"
+  local menu_url="https://raw.githubusercontent.com/hqp1310/XrayR/core-v26/xrayr.sh"
   if ! curl -sfI "$menu_url" >/dev/null 2>&1; then
     if [ -n "$API_HOST" ]; then
       menu_url="${API_HOST}/xraywarp/XrayR"
