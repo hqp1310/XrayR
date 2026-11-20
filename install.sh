@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# Script Cài Đặt Tự Động XrayR v0.9.6-VN (Bản Việt Hóa - Phương Liên 4G)
+# Script Cài Đặt Tự Động XrayR v0.9.7-VN (Bản Việt Hóa - Phương Liên 4G)
 # Hỗ trợ: VLESS, VMess, Trojan, Shadowsocks, MLKEM768X25519PLUS (Hậu lượng tử)
 # Repo: https://github.com/hqp1310/XrayR
 # ==============================================================================
@@ -76,7 +76,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo -e "${GREEN}================================================================${PLAIN}"
-echo -e "${GREEN}       BẮT ĐẦU CÀI ĐẶT XRAYR v0.9.6-VN (BẢN VIỆT HÓA)           ${PLAIN}"
+echo -e "${GREEN}       BẮT ĐẦU CÀI ĐẶT XRAYR v0.9.7-VN (BẢN VIỆT HÓA)           ${PLAIN}"
 echo -e "${GREEN}================================================================${PLAIN}"
 
 # Cài đặt các gói phụ trợ cơ bản & giải phóng apt lock
@@ -163,7 +163,7 @@ fi
 
 # Tải bộ cài XrayR-linux.zip (Đa nguồn: GitHub Raw -> Web Panel Mirror -> Server Mirror)
 download_package() {
-    echo -e "${SKYBLUE}[3/5] Đang tải gói nhị phân XrayR v0.9.6-VN...${PLAIN}"
+    echo -e "${SKYBLUE}[3/5] Đang tải gói nhị phân XrayR v0.9.7-VN...${PLAIN}"
     mkdir -p /tmp/xrayr_pkg
     cd /tmp/xrayr_pkg || exit 1
     rm -rf XrayR-linux.zip XrayR geoip.dat geosite.dat 2>/dev/null
@@ -317,15 +317,13 @@ EOF
 
     systemctl daemon-reload
     systemctl enable XrayR >/dev/null 2>&1
-    if [[ "$ONLY_BINARY" != true ]]; then
-        systemctl restart XrayR
-    fi
+    systemctl restart XrayR 2>/dev/null || true
 }
 
 setup_service_and_cli
 
 if [[ "$ONLY_BINARY" == true ]]; then
-    echo -e "${GREEN}✓ Cài đặt nhị phân XrayR v0.9.6-VN Core và dịch vụ Systemd thành công!${PLAIN}"
+    echo -e "${GREEN}✓ Cập nhật nhị phân XrayR v0.9.7-VN Core và khởi động lại dịch vụ thành công!${PLAIN}"
     exit 0
 fi
 
@@ -334,7 +332,7 @@ sleep 2
 if systemctl is-active --quiet XrayR; then
     echo -e ""
     echo -e "${GREEN}================================================================${PLAIN}"
-    echo -e "${GREEN}       🎉 CÀI ĐẶT XRAYR v0.9.6-VN THÀNH CÔNG RỰC RỠ!            ${PLAIN}"
+    echo -e "${GREEN}       🎉 CÀI ĐẶT XRAYR v0.9.7-VN THÀNH CÔNG RỰC RỠ!            ${PLAIN}"
     echo -e "${GREEN}================================================================${PLAIN}"
     echo -e "  • Web Panel : ${SKYBLUE}${API_HOST}${PLAIN}"
     echo -e "  • Node ID   : ${SKYBLUE}${NODE_ID}${PLAIN}"

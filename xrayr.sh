@@ -1900,7 +1900,7 @@ if [[ $# > 0 ]]; then
         ;;
         "log"|"logs") check_install 0 && show_log 0
         ;;
-        "version") /usr/local/XrayR/XrayR version 2>/dev/null || echo "XrayR v0.9.6-VN (Phương Liên 4G)"
+        "version") /usr/local/XrayR/XrayR version 2>/dev/null || echo "XrayR v0.9.7-VN (Phương Liên 4G)"
         ;;
         "x25519") /usr/local/XrayR/XrayR x25519 2>/dev/null || echo "Lệnh x25519 chỉ dùng được khi XrayR đã cài đặt"
         ;;

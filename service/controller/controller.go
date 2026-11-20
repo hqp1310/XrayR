@@ -590,14 +590,27 @@ func (c *Controller) userInfoMonitor() (err error) {
 	}
 
 	// Report Online info
-	if onlineDevice, err := c.GetOnlineDevice(c.Tag); err != nil {
-		c.logger.Print(err)
-	} else if len(*onlineDevice) > 0 {
-		if err = c.apiClient.ReportNodeOnlineUsers(onlineDevice); err != nil {
-			c.logger.Print(err)
-		} else {
-			c.logger.Printf("Báo cáo %d người dùng đang online", len(*onlineDevice))
+	var allOnlineUsers []api.OnlineUser
+	for _, user := range *c.userList {
+		userTag := c.buildUserTag(&user)
+		if om := c.stm.GetOnlineMap("user>>>" + userTag + ">>>online"); om != nil {
+			for _, ip := range om.List() {
+				allOnlineUsers = append(allOnlineUsers, api.OnlineUser{
+					UID: user.UID,
+					IP:  ip,
+				})
+			}
 		}
+	}
+
+	if onlineDevice, err := c.GetOnlineDevice(c.Tag); err == nil && onlineDevice != nil && len(*onlineDevice) > 0 {
+		allOnlineUsers = append(allOnlineUsers, *onlineDevice...)
+	}
+
+	if err = c.apiClient.ReportNodeOnlineUsers(&allOnlineUsers); err != nil {
+		c.logger.Print(err)
+	} else if len(allOnlineUsers) > 0 {
+		c.logger.Printf("Báo cáo %d thiết bị online", len(allOnlineUsers))
 	}
 
 	// Report Illegal user

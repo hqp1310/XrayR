@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	stdnet "net"
 	"os"
 	"regexp"
 	"strconv"
@@ -306,6 +307,38 @@ func (c *APIClient) ReportNodeStatus(nodeStatus *api.NodeStatus) (err error) {
 
 // ReportNodeOnlineUsers implements the API interface
 func (c *APIClient) ReportNodeOnlineUsers(onlineUserList *[]api.OnlineUser) error {
+	path := "/api/v1/server/UniProxy/alive"
+
+	data := make(map[int][]string)
+	if onlineUserList != nil {
+		seen := make(map[int]map[string]bool)
+		for _, user := range *onlineUserList {
+			if user.UID <= 0 {
+				continue
+			}
+			ip := strings.TrimSpace(user.IP)
+			if host, _, err := stdnet.SplitHostPort(ip); err == nil {
+				ip = host
+			}
+			if ip == "" {
+				continue
+			}
+			if seen[user.UID] == nil {
+				seen[user.UID] = make(map[string]bool)
+			}
+			if !seen[user.UID][ip] {
+				seen[user.UID][ip] = true
+				data[user.UID] = append(data[user.UID], ip)
+			}
+		}
+	}
+
+	res, err := c.client.R().SetBody(data).ForceContentType("application/json").Post(path)
+	_, err = c.parseResponse(res, path, err)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

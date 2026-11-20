@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	version  = "0.9.6-VN (Xray-core v26)"
+	version  = "0.9.7-VN"
 	codename = "XrayR"
 	intro    = "Backend Xray hiệu năng cao, tối ưu RAM, Xray-core v26 - Bản Việt Hóa bởi Phương Liên 4G"
 )

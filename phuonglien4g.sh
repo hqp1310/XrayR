@@ -127,7 +127,7 @@ function obtain_cert(){
 }
 
 function run_install(){
-  echo "   [XrayR Core] Đang cài đặt XrayR v0.9.6-VN (Việt Hóa, ML-KEM, Tối ưu RAM, Xray-core v26)..."
+  echo "   [XrayR Core] Đang cài đặt XrayR v0.9.7-VN (Việt Hóa, ML-KEM, Tối ưu RAM, Xray-core v26)..."
   local install_url="https://raw.githubusercontent.com/hqp1310/XrayR/core-v26/install.sh"
   if ! curl -sfI "$install_url" >/dev/null 2>&1; then
     if [ -n "$API_HOST" ]; then
