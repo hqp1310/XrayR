@@ -456,6 +456,8 @@ func (c *APIClient) parseV2rayNodeResponse(s *serverConfig) (*api.NodeInfo, erro
 		EnableREALITY:     enableREALITY,
 		REALITYConfig:     &realityConfig,
 		NameServerConfig:  s.parseDNSConfig(),
+		Encryption:        s.Encryption,
+		EncryptionSettings: s.EncryptionSettings,
 	}, nil
 }
 

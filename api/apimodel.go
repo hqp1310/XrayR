@@ -63,6 +63,8 @@ type NodeInfo struct {
 	NameServerConfig    []*conf.NameServerConfig
 	EnableREALITY       bool
 	REALITYConfig       *REALITYConfig
+	Encryption          string
+	EncryptionSettings  any
 	Show                bool
 	EnableTFO           bool
 	Dest                string

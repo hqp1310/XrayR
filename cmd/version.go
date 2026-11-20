@@ -7,15 +7,15 @@ import (
 )
 
 var (
-	version  = "0.9.6"
+	version  = "0.9.6-VN"
 	codename = "XrayR"
-	intro    = "A Xray backend that supports many panels"
+	intro    = "Backend Xray hiệu năng cao, tối ưu RAM - Bản Việt Hóa bởi Phương Liên 4G"
 )
 
 func init() {
 	rootCmd.AddCommand(&cobra.Command{
 		Use:   "version",
-		Short: "Print current version of XrayR",
+		Short: "Xem thông tin phiên bản XrayR",
 		Run: func(cmd *cobra.Command, args []string) {
 			showVersion()
 		},

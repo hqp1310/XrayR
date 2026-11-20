@@ -10,6 +10,8 @@ type serverConfig struct {
 	trojan
 
 	ServerPort int `json:"server_port"`
+	Encryption string `json:"encryption"`
+	EncryptionSettings any `json:"encryption_settings"`
 	BaseConfig struct {
 		PushInterval int `json:"push_interval"`
 		PullInterval int `json:"pull_interval"`

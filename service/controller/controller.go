@@ -164,7 +164,7 @@ func (c *Controller) Start() error {
 
 	// Start periodic tasks
 	for i := range c.tasks {
-		c.logger.Printf("Start %s periodic task", c.tasks[i].tag)
+		c.logger.Printf("Khởi chạy tác vụ định kỳ: %s", c.tasks[i].tag)
 		go c.tasks[i].Start()
 	}
 
@@ -306,7 +306,7 @@ func (c *Controller) nodeInfoMonitor() (err error) {
 				}
 			}
 		}
-		c.logger.Printf("%d user deleted, %d user added", len(deleted), len(added))
+		c.logger.Printf("Đã xóa %d người dùng, thêm mới %d người dùng", len(deleted), len(added))
 	}
 	c.userList = newUserInfo
 	return nil
@@ -427,7 +427,7 @@ func (c *Controller) addNewUser(userInfo *[]api.UserInfo, nodeInfo *api.NodeInfo
 	if err != nil {
 		return err
 	}
-	c.logger.Printf("Added %d new users", len(*userInfo))
+	c.logger.Printf("Đã thêm mới %d người dùng", len(*userInfo))
 	return nil
 }
 
@@ -596,7 +596,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 		if err = c.apiClient.ReportNodeOnlineUsers(onlineDevice); err != nil {
 			c.logger.Print(err)
 		} else {
-			c.logger.Printf("Report %d online users", len(*onlineDevice))
+			c.logger.Printf("Báo cáo %d người dùng đang online", len(*onlineDevice))
 		}
 	}
 
@@ -607,7 +607,7 @@ func (c *Controller) userInfoMonitor() (err error) {
 		if err = c.apiClient.ReportIllegal(detectResult); err != nil {
 			c.logger.Print(err)
 		} else {
-			c.logger.Printf("Report %d illegal behaviors", len(*detectResult))
+			c.logger.Printf("Báo cáo %d hành vi vi phạm quy tắc", len(*detectResult))
 		}
 
 	}

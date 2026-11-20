@@ -32,7 +32,7 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Config file for XrayR.")
+	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "Đường dẫn file cấu hình XrayR.")
 }
 
 func getConfig() *viper.Viper {
@@ -86,7 +86,7 @@ func run() error {
 		// Discarding event received within a short period of time after receiving an event.
 		if time.Now().After(lastTime.Add(3 * time.Second)) {
 			// Hot reload function
-			fmt.Println("Config file changed:", e.Name)
+			fmt.Println("File cấu hình đã thay đổi, đang tự động nạp lại:", e.Name)
 			p.Close()
 			// Delete old instance and trigger GC
 			runtime.GC()

@@ -14,17 +14,17 @@ var (
 	priKey    string
 	x25519Cmd = &cobra.Command{
 		Use:   "x25519",
-		Short: "Generate key pair for x25519 key exchange",
+		Short: "Tạo cặp khóa x25519 cho VLESS Reality / VLESS Encryption",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := x25519(); err != nil {
-				fmt.Println(err)
+				fmt.Println("Lỗi:", err)
 			}
 		},
 	}
 )
 
 func init() {
-	x25519Cmd.PersistentFlags().StringVarP(&priKey, "input", "i", "", "Input private key (base64.RawURLEncoding)")
+	x25519Cmd.PersistentFlags().StringVarP(&priKey, "input", "i", "", "Nhập khóa riêng tư (base64.RawURLEncoding)")
 	rootCmd.AddCommand(x25519Cmd)
 }
 
@@ -41,7 +41,7 @@ func x25519() error {
 			return err
 		}
 		if len(p) != curve25519.ScalarSize {
-			return errors.New("invalid private key")
+			return errors.New("khóa riêng tư không hợp lệ (độ dài phải đúng 32 bytes)")
 		}
 		privateKey = p
 	}
@@ -57,7 +57,7 @@ func x25519() error {
 		return err
 	}
 
-	output := fmt.Sprintf("Private key: %v\nPublic key: %v",
+	output := fmt.Sprintf("Khóa riêng tư (Private key): %v\nKhóa công khai (Public key):  %v",
 		base64.RawURLEncoding.EncodeToString(privateKey),
 		base64.RawURLEncoding.EncodeToString(publicKey))
 	fmt.Println(output)
