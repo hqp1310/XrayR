@@ -591,17 +591,14 @@ func (c *Controller) userInfoMonitor() (err error) {
 
 	// Report Online info
 	var allOnlineUsers []api.OnlineUser
-	now := time.Now()
 	for _, user := range *c.userList {
 		userTag := c.buildUserTag(&user)
 		if om := c.stm.GetOnlineMap("user>>>" + userTag + ">>>online"); om != nil {
-			for ip, t := range om.IpTimeMap() {
-				if now.Sub(t).Seconds() <= 120 {
-					allOnlineUsers = append(allOnlineUsers, api.OnlineUser{
-						UID: user.UID,
-						IP:  ip,
-					})
-				}
+			for _, ip := range om.List() {
+				allOnlineUsers = append(allOnlineUsers, api.OnlineUser{
+					UID: user.UID,
+					IP:  ip,
+				})
 			}
 		}
 	}
